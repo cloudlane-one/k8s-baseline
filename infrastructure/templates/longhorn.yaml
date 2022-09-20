@@ -28,10 +28,7 @@ spec:
         name: longhorn
         namespace: flux-system
   values:
-    persistence:
-      defaultClass: true
-      defaultClassReplicaCount: 2
-      defaultDataLocality: best-effort
+    {{ .Files.Get "bootstrap-values/longhorn.yaml" | nindent 4 }}
     defaultSettings:
       # See https://longhorn.io/docs/1.2.4/snapshots-and-backups/backup-and-restore/set-backup-target/#set-up-aws-s3-backupstore
       backupTarget: {{ printf "s3://%s@%s/" .Values.s3_backup.bucket .Values.s3_backup.region }}

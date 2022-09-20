@@ -8,7 +8,7 @@ k3s_cluster:
     workers:
       hosts:
         kube-1:
-          ansible_host: "" # IP address of server node
+          ansible_host: "" # IP address of agent node
   vars:
     # Default variables, may be adapted
     ansible_user: root

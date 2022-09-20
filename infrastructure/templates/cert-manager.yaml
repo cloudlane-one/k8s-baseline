@@ -28,7 +28,7 @@ spec:
         name: jetstack
         namespace: flux-system
   values:
-    installCRDs: true
+    {{ .Files.Get "bootstrap-values/cert-manager.yaml" | nindent 4 }}
     prometheus:
       enabled: true
       servicemonitor:

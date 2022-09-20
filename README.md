@@ -14,12 +14,12 @@ These are to be installed on your local machine.
 ### Install Ansible role dependencies
 
 ```bash
-ansible-galaxy install -r ansible/requirements.yaml
+ansible-galaxy install -r requirements.yaml
 ```
 
 ### Provide configuration
 
-First copy the configuration template file `ansible/inventory.yaml` to the root of the repository. Then edit the config options in the file to your liking.
+First copy the configuration template file `inventory.template.yaml` to `inventory.yaml`. Then edit the config options in the file to your liking.
 
 ### Run the Ansible playbook
 
