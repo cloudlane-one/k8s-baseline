@@ -1,0 +1,17 @@
+k3s_cluster:
+  children:
+    masters:
+      hosts:
+        # You can add an arbitrary number of agents and nodes based on the templates below
+        kube-0:
+          ansible_host: "" # IP address of server node
+    workers:
+      hosts:
+        kube-1:
+          ansible_host: "" # IP address of server node
+  vars:
+    # Default variables, may be adapted
+    ansible_user: root
+    gitops_repo: https://github.com/cloudlane-one/k8s-baseline
+    gitops_branch: main
+    helm_values: {} # See helm-flux/values.yaml

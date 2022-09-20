@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-system
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: ingress-nginx
+  namespace: flux-system
+spec:
+  interval: 5m
+  url: https://kubernetes.github.io/ingress-nginx
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: ingress-nginx
+  namespace: ingress-system
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: ingress-nginx
+      version: "^4"
+      sourceRef:
+        kind: HelmRepository
+        name: ingress-nginx
+        namespace: flux-system
+  values:
+    controller:
+      ingressClassResource:
+        default: true
+      extraArgs:
+        enable-ssl-passthrough: "true"
+      config:
+        proxy-buffer-size: "16k" # See https://andrewlock.net/fixing-nginx-upstream-sent-too-big-header-error-when-running-an-ingress-controller-in-kubernetes/ for explanation
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+      secretName: dex-cert
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: bitnami
+  namespace: flux-system
+spec:
+  interval: 5m
+  url: https://charts.bitnami.com/bitnami
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: external-dns
+  namespace: ingress-system
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: external-dns
+      version: "^6"
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+        namespace: flux-system
+  values:
+    sources:
+      - service
+      - ingress
+    txtOwnerId: {{ printf "%s-%s" .Values.domain .Values.clusterName | quote }}
+    {{- range $k, $v := .Values.external_dns }}
+    {{ printf "%s:" $k | nindent 4 }}
+      {{- $v | toYaml | nindent 6 }}
+    {{- end }}
+    serviceMonitor:
+      enabled: true
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: acme
+spec:
+  acme:
+    email: {{ .Values.admin.email | quote }}
+    {{ if .Values.letsencrypt_staging -}}
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    {{- else -}}
+    server: https://acme-v02.api.letsencrypt.org/directory
+    {{- end }}
+    privateKeySecretRef:
+      # Secret resource that will be used to store the account's private key.
+      name: acme-issuer-account-key
+    solvers:
+      - http01:
+          ingress:
+            class: nginx

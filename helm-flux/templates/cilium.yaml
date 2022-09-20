@@ -1,0 +1,54 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: cilium
+  namespace: flux-system
+spec:
+  interval: 5m
+  url: https://helm.cilium.io/
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: cilium
+  namespace: kube-system
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: cilium
+      version: "^1"
+      sourceRef:
+        kind: HelmRepository
+        name: cilium
+        namespace: flux-system
+  values:
+    encryption:
+      # See https://docs.cilium.io/en/stable/gettingstarted/encryption-wireguard/
+      enabled: true
+      type: wireguard
+      wireguard:
+        userspaceFallback: true
+    l7Proxy: false
+    hubble:
+      # See https://docs.cilium.io/en/stable/gettingstarted/hubble_setup/
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+      relay:
+        enabled: true
+      ui:
+        enabled: true
+        ingress:
+          enabled: true
+          annotations:
+            cert-manager.io/cluster-issuer: acme
+            {{ include "admin_auth_annotations" . | nindent 18 }}
+          hosts: 
+            - {{ include "get_hostname" (dict "service" "cilium_ui" "context" $) }}
+          tls:
+            - hosts:
+                - {{ include "get_hostname" (dict "service" "cilium_ui" "context" $) }}
+              secretName: cilium-cert

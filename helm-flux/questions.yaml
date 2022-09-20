@@ -1,0 +1,58 @@
+questions:
+  - variable: cluster.name
+    default: mycluster
+    description: "Specify the name of the cluster"
+    label: "Cluster Name"
+    required: true
+    type: string
+    group: "General"
+
+  - variable: kubernetesVersion
+    default: v1.22.6+rke2r1
+    description: "Specify Kubernetes version"
+    label: "Kubernetes Version"
+    type: enum
+    required: true
+    options:
+      - v1.21.6+rke2r1
+      - v1.21.7+rke2r1
+      - v1.21.8+rke2r1
+      - v1.21.9+rke2r1
+      - v1.22.5+rke2r1
+      - v1.21.6+rke2r1
+    group: "General"
+
+  - variable: components.longhorn
+    default: true
+    label: "Longhorn"
+    description: "Enable Longhorn"
+    type: boolean
+    group: "Components"
+
+  - variable: components.monitoring
+    default: true
+    label: "Monitoring"
+    description: "Enable Monitoring"
+    type: boolean
+    group: "Components"
+
+  - variable: components.external_dns
+    default: true
+    label: "ExternalDNS"
+    description: "Enable ExternalDNS"
+    type: boolean
+    group: "Components"
+
+  - variable: components.kubevela
+    default: true
+    label: "Kubevela"
+    description: "Enable Kubevela"
+    type: boolean
+    group: "Components"
+
+  - variable: components.velero
+    default: true
+    label: "Velero"
+    description: "Enable Velero"
+    type: boolean
+    group: "Components"

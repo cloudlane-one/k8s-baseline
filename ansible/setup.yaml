@@ -1,0 +1,90 @@
+- name: Install k3s on all cluster nodes and bootstrap infrastructure
+  hosts: k3s_cluster
+  become: true
+  vars:
+    k3s_become: true
+    k3s_etcd_datastore: true
+    k3s_server:
+      node-taint:
+        - "node.cilium.io/agent-not-ready=true:NoExecute"
+      flannel-backend: "none"
+      kube-apiserver-arg:
+        - "oidc-issuer-url=https://{{ helm_values.subdomains.dex }}.{{ helm_values.domain }}"
+        - "oidc-client-id=admin-oidc"
+        - "oidc-groups-claim=groups"
+    k3s_agent:
+      node-taint:
+        - "node.cilium.io/agent-not-ready=true:NoExecute"
+    k3s_server_manifests_templates:
+      # All these provide either required resources for running pods
+      # or CRDs required for installing the full infrastructure chart
+      - "manifests/cert-manager.yaml"
+      - "manifests/cilium.yaml"
+      - "manifests/fluxcd.yaml"
+      - "manifests/longhorn.yaml"
+      - "manifests/o11y-stack.yaml"
+    nfs_package: nfs-utils
+  tasks:
+    - name: Set control_node variable for master hosts
+      ansible.builtin.set_fact:
+        k3s_control_node: true
+      when: "'masters' in group_names"
+
+    - name: Set nfs package name for distros with apt
+      ansible.builtin.set_fact:
+        nfs_package: nfs-common
+      when: "ansible_facts['os_family'] == 'Debian'"
+
+    - name: Install nfs client
+      ansible.builtin.package:
+        name: "{{ nfs_package }}"
+        state: present
+
+    - name: Install k3s via role
+      ansible.builtin.include_role: xanmanning.k3s
+
+- name: Set up GitOps for cluster infrastructure via FluxCD
+  hosts: masters
+  run_once: true
+  tasks:
+    - name: Install pip dependencies for k8s module
+      ansible.builtin.pip:
+        name:
+          - pyyaml>=3.11
+          - kubernetes>=12.0.0
+          - jsonpatch
+
+    - name: Add GitRepository containing infrastructure chart
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: source.toolkit.fluxcd.io/v1beta2
+          kind: GitRepository
+          metadata:
+            name: k8s-baseline
+            namespace: flux-system
+          spec:
+            interval: 5m
+            url: "{{ gitop_repo }}"
+            ref:
+              branch: "{{ gitops_branch }}"
+
+    - name: Add HelmRelease for infrastructure chart
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: source.toolkit.fluxcd.io/v2beta1
+          kind: HelmRelease
+          metadata:
+            name: k8s-baseline
+            namespace: flux-system
+          spec:
+            interval: 5m
+            chart:
+              spec:
+                chart: ./helm-flux
+                sourceRef:
+                  kind: GitRepository
+                  name: k8s-baseline
+                reconcileStrategy: Revision
+            values: "{{ helm_values }}"
