@@ -40,5 +40,6 @@ subdomains:
   oauth2_proxy: "admin-auth"
   grafana: "logs"
   alertmanager: "alerts"
+  weave_gitops: "gitops"
 
 letsencrypt_staging: false # If true, uses Letsencrypt staging APIs instead of production ones. Prevents execeeding API limits.

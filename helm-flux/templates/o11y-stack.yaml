@@ -9,7 +9,7 @@ metadata:
   name: prometheus-community
   namespace: flux-system
 spec:
-  interval: 5m
+  interval: 1h
   url: https://prometheus-community.github.io/helm-charts
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
@@ -18,7 +18,7 @@ metadata:
   name: kube-prometheus-stack
   namespace: o11y-system
 spec:
-  interval: 5m
+  interval: 1h
   chart:
     spec:
       chart: kube-prometheus-stack
@@ -97,7 +97,7 @@ metadata:
   name: grafana
   namespace: flux-system
 spec:
-  interval: 5m
+  interval: 1h
   url: https://grafana.github.io/helm-charts
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
@@ -106,7 +106,7 @@ metadata:
   name: loki-stack
   namespace: o11y-system
 spec:
-  interval: 5m
+  interval: 1h
   chart:
     spec:
       chart: loki-stack
@@ -127,7 +127,7 @@ metadata:
   name: kubernetes-dashboard
   namespace: flux-system
 spec:
-  interval: 5m
+  interval: 1h
   url: https://kubernetes.github.io/dashboard
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
@@ -136,7 +136,7 @@ metadata:
   name: kubernetes-dashboard
   namespace: o11y-system
 spec:
-  interval: 5m
+  interval: 1h
   chart:
     spec:
       chart: kubernetes-dashboard

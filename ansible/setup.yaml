@@ -64,7 +64,7 @@
             name: k8s-baseline
             namespace: flux-system
           spec:
-            interval: 5m
+            interval: 1h
             url: "{{ gitop_repo }}"
             ref:
               branch: "{{ gitops_branch }}"
@@ -79,7 +79,7 @@
             name: k8s-baseline
             namespace: flux-system
           spec:
-            interval: 5m
+            interval: 1h
             chart:
               spec:
                 chart: ./helm-flux

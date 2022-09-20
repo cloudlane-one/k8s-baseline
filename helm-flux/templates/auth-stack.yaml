@@ -9,7 +9,7 @@ metadata:
   name: dex
   namespace: flux-system
 spec:
-  interval: 5m
+  interval: 1h
   url: https://charts.dexidp.io
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
@@ -18,7 +18,7 @@ metadata:
   name: dex
   namespace: auth-system
 spec:
-  interval: 5m
+  interval: 1h
   chart:
     spec:
       chart: dex
@@ -69,7 +69,6 @@ spec:
             - http://localhost:8000 # For kubelogin
             - http://localhost:18000 # For kubelogin
             - {{ printf "https://%s/oauth2/callback" (include "get_hostname" ("service" "oauth2_proxy" "context" $)) }}
-            - {{ printf "https://%s/dex/callback" (include "get_hostname" ("service" "velaux" "context" $)) }}
       oauth2:
         skipApprovalScreen: true
       serviceMonitor:
@@ -94,7 +93,7 @@ metadata:
   name: oauth2-proxy
   namespace: flux-system
 spec:
-  interval: 5m
+  interval: 1h
   url: https://oauth2-proxy.github.io/manifests
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
@@ -105,7 +104,7 @@ metadata:
 spec:
   dependsOn:
     - name: dex
-  interval: 5m
+  interval: 1h
   chart:
     spec:
       chart: oauth2-proxy
@@ -124,8 +123,8 @@ spec:
         whitelist_domains = [ {{ printf ".%s" .Values.domain | quote }} ]
         provider = "oidc"
         provider_display_name = {{ printf "SSO for %s" .Values.domain | quote }}
-        oidc_issuer_url = {{ include "get_sso_config" (dict "key" "oidc_issuer_url" "context" $) | quote }}
-        redirect_url = {{ include "urls.authproxy_callback" . | quote }}
+        oidc_issuer_url = {{ printf "https://%s" (include "get_hostname" ("service" "dex" "context" $)) | quote }}
+        redirect_url = {{ printf "https://%s/oauth2/callback" (include "get_hostname" ("service" "oauth2_proxy" "context" $)) | quote }}
         set_xauthrequest = true
         set_authorization_header = true
         pass_authorization_header = true
