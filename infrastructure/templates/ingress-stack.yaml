@@ -39,7 +39,6 @@ spec:
         enabled: true
         serviceMonitor:
           enabled: true
-      secretName: dex-cert
 ---
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: HelmRepository
