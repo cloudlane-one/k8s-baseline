@@ -39,6 +39,21 @@ spec:
         value: {{ .Values.admin.idp.clientID | quote }}
       - name: IDP_CLIENT_SECRET
         value: {{ .Values.admin.idp.clientSecret | quote }}
+    serviceMonitor:
+      enabled: true
+    ingress:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: acme
+      hosts:
+        - host: {{ include "get_hostname" (dict "service" "dex" "context" $) }}
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+      tls:
+        - hosts:
+            - {{ include "get_hostname" (dict "service" "dex" "context" $) }}
+          secretName: dex-cert
     config:
       # See https://dexidp.io/docs/storage/ for more options
       storage:
@@ -76,21 +91,6 @@ spec:
             - {{ printf "https://%s/oauth2/callback" (include "get_hostname" (dict "service" "weave_gitops" "context" $)) }}
       oauth2:
         skipApprovalScreen: true
-      serviceMonitor:
-        enabled: true
-      ingress:
-        enabled: true
-        annotations:
-          cert-manager.io/cluster-issuer: acme
-        hosts:
-          - host: {{ include "get_hostname" (dict "service" "dex" "context" $) }}
-            paths:
-              - path: /
-                pathType: ImplementationSpecific
-        tls:
-          - hosts:
-              - {{ include "get_hostname" (dict "service" "dex" "context" $) }}
-            secretName: dex-cert
 ---
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: HelmRepository
