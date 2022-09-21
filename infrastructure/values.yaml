@@ -1,6 +1,6 @@
 domain: "" # The public root domain of this cluster (e.g. "example.org")
 clusterName: "" # Name for this cluster (unique for the supplied domain)
-clusterSecret: "" # Min. 10 character string to use as an internal cluster secret
+clusterSecret: "" # Min. 16 character string to use as an internal cluster secret
 
 org:
   name: "" # The full name of your organization

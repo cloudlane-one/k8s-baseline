@@ -122,7 +122,7 @@ spec:
     config:
       clientID: admin-oidc
       clientSecret: {{ .Values.clusterSecret | quote }}
-      cookieSecret: {{ .Values.clusterSecret | quote }}
+      cookieSecret: {{ (substr 0 16 .Values.clusterSecret) | quote }}
       configFile: |-
         upstreams = "file:///dev/null"
         whitelist_domains = [ {{ printf ".%s" .Values.domain | quote }} ]
