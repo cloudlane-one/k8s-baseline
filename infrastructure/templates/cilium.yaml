@@ -32,7 +32,12 @@ spec:
     hubble:
       # See https://docs.cilium.io/en/stable/gettingstarted/hubble_setup/
       metrics:
-        enabled: true
+        enabled:
+          - dns
+          - drop
+          - tcp
+          - flow
+          - icmp
         serviceMonitor:
           enabled: true
       relay:
