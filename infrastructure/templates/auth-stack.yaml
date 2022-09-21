@@ -43,7 +43,7 @@ spec:
       # See https://dexidp.io/docs/storage/ for more options
       storage:
         type: memory
-      issuer: {{ printf "https://%s" (include "get_hostname" ("service" "dex" "context" $)) }}
+      issuer: {{ printf "https://%s" (include "get_hostname" (dict "service" "dex" "context" $)) }}
       connectors:     
         - type: {{ .Values.admin.idp.type }}
           id: {{ printf "adminIDP-%s" .Values.admin.idp.type }}
@@ -52,7 +52,7 @@ spec:
             # Credentials can be string literals or pulled from the environment.
             clientID: $IDP_CLIENT_ID
             clientSecret: $IDP_CLIENT_SECRET
-            redirectURI: {{ printf "https://%s/callback" (include "get_hostname" ("service" "dex" "context" $)) }}
+            redirectURI: {{ printf "https://%s/callback" (include "get_hostname" (dict "service" "dex" "context" $)) }}
             # flag which will switch from using the internal GitHub id to the users handle (@mention) as the user id.
             # It is possible for a user to change their own user name but it is very rare for them to do so
             {{ if eq .Values.admin.idp.type "github" -}}
@@ -72,7 +72,8 @@ spec:
           redirectURIs: 
             - http://localhost:8000 # For kubelogin
             - http://localhost:18000 # For kubelogin
-            - {{ printf "https://%s/oauth2/callback" (include "get_hostname" ("service" "oauth2_proxy" "context" $)) }}
+            - {{ printf "https://%s/oauth2/callback" (include "get_hostname" (dict "service" "oauth2_proxy" "context" $)) }}
+            - {{ printf "https://%s/oauth2/callback" (include "get_hostname" (dict "service" "weave_gitops" "context" $)) }}
       oauth2:
         skipApprovalScreen: true
       serviceMonitor:
@@ -127,8 +128,8 @@ spec:
         whitelist_domains = [ {{ printf ".%s" .Values.domain | quote }} ]
         provider = "oidc"
         provider_display_name = {{ printf "SSO for %s" .Values.domain | quote }}
-        oidc_issuer_url = {{ printf "https://%s" (include "get_hostname" ("service" "dex" "context" $)) | quote }}
-        redirect_url = {{ printf "https://%s/oauth2/callback" (include "get_hostname" ("service" "oauth2_proxy" "context" $)) | quote }}
+        oidc_issuer_url = {{ printf "https://%s" (include "get_hostname" (dict "service" "dex" "context" $)) | quote }}
+        redirect_url = {{ printf "https://%s/oauth2/callback" (include "get_hostname" (dict "service" "oauth2_proxy" "context" $)) | quote }}
         set_xauthrequest = true
         set_authorization_header = true
         pass_authorization_header = true
