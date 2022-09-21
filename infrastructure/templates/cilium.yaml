@@ -23,6 +23,10 @@ spec:
         kind: HelmRepository
         name: cilium
         namespace: flux-system
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
   values:
     {{ .Files.Get "bootstrap-values/cilium.yaml" | nindent 4 }}
     l7Proxy: false

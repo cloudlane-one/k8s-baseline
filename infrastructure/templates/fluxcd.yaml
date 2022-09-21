@@ -27,6 +27,15 @@ spec:
         kind: HelmRepository
         name: fluxcd-community
         namespace: flux-system
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
+  values:
+    {{ .Files.Get "bootstrap-values/fluxcd.yaml" | nindent 4 }}
+    prometheus:
+      podMonitor:
+        create: true
 ---
 apiVersion: v1
 kind: Secret
