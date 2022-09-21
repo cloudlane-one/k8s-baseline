@@ -89,3 +89,7 @@ spec:
             - {{ include "get_hostname" (dict "service" "weave_gitops" "context" $) }}
     metrics:
       enabled: false
+    adminUser:
+      create: true
+      username: admin
+      passwordHash: {{ htpasswd "admin" .Values.clusterSecret }}
