@@ -73,7 +73,6 @@ spec:
         enabled: true
         annotations:
           cert-manager.io/cluster-issuer: acme
-          {{ include "admin_auth_annotations" . | nindent 10 }}
         hosts:
           - {{ include "get_hostname" (dict "service" "grafana" "context" $) }}
         tls:
