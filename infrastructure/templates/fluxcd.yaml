@@ -74,7 +74,7 @@ spec:
   interval: 1h
   values:
     ingress:
-      enabled: false
+      enabled: true
       annotations:
         cert-manager.io/cluster-issuer: acme
         {{ include "admin_auth_annotations" . | nindent 8 }}
