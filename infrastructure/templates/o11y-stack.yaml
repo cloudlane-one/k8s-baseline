@@ -47,6 +47,11 @@ spec:
     grafana:
       adminPassword: {{ .Values.clusterSecret | quote }}
       grafana.ini:
+        server:
+          root_url: {{ printf "https://%s" (include "get_hostname" (dict "service" "grafana" "context" $)) }}
+        auth:
+          oauth_auto_login: true
+          disable_login_form: true
         auth.generic_oauth:
           # See: https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/generic-oauth/
           enabled: true
