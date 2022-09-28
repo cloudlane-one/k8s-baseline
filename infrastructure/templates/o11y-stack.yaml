@@ -47,13 +47,19 @@ spec:
     grafana:
       adminPassword: {{ .Values.clusterSecret | quote }}
       grafana.ini:
-        auth.proxy:
-          # see: https://grafana.com/docs/grafana/v9.0/setup-grafana/configure-security/configure-authentication/auth-proxy/
+        auth.generic_oauth:
+          # See: https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/generic-oauth/
           enabled: true
-          header_name: X-Auth-Request-Email
-          header_property: email
-          auto_sign_up: true
-          headers: Name:X-Auth-Request-Preferred-Username Groups:X-Auth-Request-Groups
+          name: Admin OIDC
+          client_id: admin-oidc
+          client_secret: {{ .Values.clusterSecret | quote }}
+          scopes: oidc,profile,email,groups
+          auth_url: {{ printf "https://%s/auth" (include "get_hostname" (dict "service" "dex" "context" $)) | quote }}
+          token_url: {{ printf "https://%s/token" (include "get_hostname" (dict "service" "dex" "context" $)) | quote }}
+          api_url: {{ printf "https://%s/userinfo" (include "get_hostname" (dict "service" "dex" "context" $)) | quote }}
+          allow_sign_up: true
+          allowed_groups: {{ .Values.admin.group | quote }}
+          role_attribute_path: "contains(groups[*], {{ .Values.admin.group | squote }}) && 'Admin' || 'Viewer'"
       additionalDataSources:
         - name: loki
           access: proxy

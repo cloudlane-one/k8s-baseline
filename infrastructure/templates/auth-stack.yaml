@@ -89,6 +89,7 @@ spec:
             - http://localhost:18000 # For kubelogin
             - {{ printf "https://%s/oauth2/callback" (include "get_hostname" (dict "service" "oauth2_proxy" "context" $)) }}
             - {{ printf "https://%s/oauth2/callback" (include "get_hostname" (dict "service" "weave_gitops" "context" $)) }}
+            - {{ printf "https://%s/login/generic_oauth" (include "get_hostname" (dict "service" "grafana" "context" $)) }}
       oauth2:
         skipApprovalScreen: true
 ---
