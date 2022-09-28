@@ -58,7 +58,7 @@ spec:
           name: Admin OIDC
           client_id: admin-oidc
           client_secret: {{ .Values.clusterSecret | quote }}
-          scopes: oidc,profile,email,groups
+          scopes: openid,profile,email,groups
           auth_url: {{ printf "https://%s/auth" (include "get_hostname" (dict "service" "dex" "context" $)) | quote }}
           token_url: {{ printf "https://%s/token" (include "get_hostname" (dict "service" "dex" "context" $)) | quote }}
           api_url: {{ printf "https://%s/userinfo" (include "get_hostname" (dict "service" "dex" "context" $)) | quote }}
