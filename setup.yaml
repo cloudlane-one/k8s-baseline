@@ -125,7 +125,16 @@
         - longhorn-system
         - o11y-system
 
+    - name: Check whether HelmRelease for infrastraucture chart already exists
+      kubernetes.core.k8s_info:
+        api_version: helm.toolkit.fluxcd.io/v2beta1
+        kind: HelmRelease
+        name: k8s-baseline
+        namespace: flux-system
+      register: k8s_baseline_release
+
     - name: Ensure Cilium is installed
+      when: "(k8s_baseline_release.resources | length) == 0"
       kubernetes.core.helm:
         wait: true
         name: cilium
@@ -205,7 +214,7 @@
                 backupName: "{{ restore_from_backup }}"
 
     - name: Bootstrap infrastructure
-      when: restore_from_backup is undefined
+      when: (restore_from_backup is undefined) and ((k8s_baseline_release.resources | length) == 0)
       block:
         - name: Ensure Cert-Manager is installed
           kubernetes.core.helm:
