@@ -51,23 +51,8 @@ spec:
   upgrade:
     crds: CreateReplace
   values:
-    credentials:
-      existingSecret: s3-backup-credentials
-    initContainers:
-      - name: velero-plugin-for-csi
-        image: velero/velero-plugin-for-csi:v0.3.0
-        imagePullPolicy: IfNotPresent
-        volumeMounts:
-          - mountPath: /target
-            name: plugins
-      - name: velero-plugin-for-aws
-        image: velero/velero-plugin-for-aws:v1.5.0
-        imagePullPolicy: IfNotPresent
-        volumeMounts:
-          - mountPath: /target
-            name: plugins
+    {{ .Files.Get "bootstrap-values/velero.yaml" | nindent 4 }}
     configuration:
-      provider: aws
       backupStorageLocation:
         name: default
         bucket: {{ .Values.s3_backup.bucket }}
@@ -79,19 +64,3 @@ spec:
         name: default
         config:
           region: {{ .Values.s3_backup.region }}
-      features: EnableCSI
-    snapshotsEnabled: true
-    schedules:
-      full-backup:
-        disabled: false
-        schedule: "0 0 * * *"
-        useOwnerReferencesInBackup: false
-        template:
-          includedNamespaces:
-            - "*"
-          includeClusterResources: true
-          snapshotVolumes: true
-    metrics:
-      enabled: true
-      serviceMonitor:
-        enabled: true

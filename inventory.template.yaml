@@ -14,4 +14,4 @@ k3s_cluster:
     ansible_user: root
     gitops_repo: https://github.com/cloudlane-one/k8s-baseline
     gitops_branch: main
-    helm_values: {} # See helm-flux/values.yaml
+    helm_values: {} # See infrastructure/values.yaml

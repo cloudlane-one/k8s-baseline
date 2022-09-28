@@ -1,9 +1,11 @@
 - name: Install k3s on all cluster nodes and bootstrap infrastructure
   hosts: k3s_cluster
   become: true
+  tags: cluster
   vars:
     k3s_become: true
     k3s_etcd_datastore: true
+    k3s_install_hard_links: true
     k3s_server:
       node-taint:
         - "node.cilium.io/agent-not-ready=true:NoExecute"
@@ -67,6 +69,7 @@
 - name: Set up GitOps for cluster infrastructure via FluxCD
   hosts: masters
   run_once: true
+  tags: infra
   environment:
     K8S_AUTH_KUBECONFIG: /etc/rancher/k3s/k3s.yaml
   tasks:
@@ -74,12 +77,14 @@
       ansible.builtin.package:
         name: pip
 
-    - name: Ensure PIP dependencies for k8s module are installed
+    - name: Copy requirements.txt to remote
+      ansible.builtin.copy:
+        src: requirements.txt
+        dest: /tmp
+
+    - name: Ensure PIP dependencies are installed
       ansible.builtin.pip:
-        name:
-          - pyyaml>=3.11
-          - kubernetes>=12.0.0
-          - jsonpatch
+        requirements: /tmp/requirements.txt
 
     - name: Download Helm install script
       ansible.builtin.get_url:
@@ -91,92 +96,225 @@
       ansible.builtin.command: /tmp/helm-install.sh
 
     - name: Ensure helm diff plugin is installed
-      ansible.builtin.command: "helm plugin install https://github.com/databus23/helm-diff"
+      kubernetes.core.helm_plugin:
+        plugin_path: https://github.com/databus23/helm-diff
 
     - name: Copy values files for bootstrap helm charts
       ansible.builtin.copy:
         src: infrastructure/bootstrap-values
-        dest: /tmp/bootstrap-chart-values
+        dest: /tmp
+
+    - name: Ensure required namespaces exist
+      kubernetes.core.k8s:
+        wait: true
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ item }}"
+            labels:
+              "app.kubernetes.io/managed-by": "Helm"
+            annotations:
+              "meta.helm.sh/release-name": "k8s-baseline"
+              "meta.helm.sh/release-namespace": "flux-system"
+      with_items:
+        - cert-system
+        - flux-system
+        - longhorn-system
+        - o11y-system
+        - backup-system
 
     - name: Ensure Cilium is installed
       kubernetes.core.helm:
+        wait: true
         name: cilium
         release_namespace: kube-system
         chart_repo_url: https://helm.cilium.io/
         chart_ref: cilium
         chart_version: "^1"
         values_files:
-          - /tmp/bootstrap-chart-values/cilium.yaml
+          - /tmp/bootstrap-values/cilium.yaml
 
-    - name: Ensure Cert-Manager is installed
-      kubernetes.core.helm:
-        name: cert-manager
-        release_namespace: cert-system
-        create_namespace: true
-        chart_repo_url: https://charts.jetstack.io
-        chart_ref: cert-manager
-        chart_version: "^1"
-        values_files:
-          - /tmp/bootstrap-chart-values/cert-manager.yaml
+    - name: Restore from full-cluster backup
+      when: restore_from_backup is defined
+      block:
+        - name: Ensure Velero backup secret exists
+          kubernetes.core.k8s:
+            wait: true
+            definition:
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: s3-backup-credentials
+                namespace: backup-system
+              type: Opaque
+              data:
+                cloud: '{{ ("[default]\naws_access_key_id=" helm_values.s3_backup.access_key.id + "\naws_secret_access_key=" + helm_values.s3_backup.access_key.secret) | b64encode  }}'
 
-    - name: Ensure FluxCD is installed
-      kubernetes.core.helm:
-        name: fluxcd
-        release_namespace: flux-system
-        create_namespace: true
-        chart_repo_url: https://fluxcd-community.github.io/helm-charts
-        chart_ref: flux2
-        chart_version: "^1"
+        - name: Ensure Velero is installed
+          kubernetes.core.helm:
+            wait: true
+            name: velero
+            release_namespace: backup-system
+            chart_repo_url: https://vmware-tanzu.github.io/helm-charts/
+            chart_ref: velero
+            chart_version: "^2"
+            values_files:
+              - /tmp/bootstrap-values/velero.yaml
+            values:
+              backupStorageLocation:
+                name: default
+                bucket: "{{ helm_values.s3_backup.bucket }}"
+                prefix: velero
+                config:
+                  region: "{{ helm_values.s3_backup.region }}"
+                  s3Url: "https://{{ helm_values.s3_backup.endpoint }}"
+              volumeSnapshotLocation:
+                name: default
+                config:
+                  region: "{{ helm_values.s3_backup.region }}"
 
-    - name: Ensure Longhorn is installed
-      kubernetes.core.helm:
-        name: longhorn
-        release_namespace: longhorn-system
-        create_namespace: true
-        chart_repo_url: https://charts.longhorn.io
-        chart_ref: longhorn
-        chart_version: "^1"
-        values_files:
-          - /tmp/bootstrap-chart-values/longhorn.yaml
-
-    - name: Ensure Kube-Prometheus-Stack is installed
-      kubernetes.core.helm:
-        name: kube-prometheus-stack
-        release_namespace: o11y-system
-        create_namespace: true
-        chart_repo_url: https://prometheus-community.github.io/helm-charts
-        chart_ref: kube-prometheus-stack
-        chart_version: "^40"
-
-    - name: Ensure GitRepository for infrastructure chart exists
-      kubernetes.core.k8s:
-        definition:
-          apiVersion: source.toolkit.fluxcd.io/v1beta2
-          kind: GitRepository
-          metadata:
-            name: k8s-baseline
-            namespace: flux-system
-          spec:
-            interval: 1h
-            url: "{{ gitops_repo }}"
-            ref:
-              branch: "{{ gitops_branch }}"
-
-    - name: Ensure HelmRelease for infrastructure chart exists
-      kubernetes.core.k8s:
-        definition:
-          apiVersion: source.toolkit.fluxcd.io/v2beta1
-          kind: HelmRelease
-          metadata:
-            name: k8s-baseline
-            namespace: flux-system
-          spec:
-            interval: 1h
-            chart:
+        - name: Apply backup restoration
+          kubernetes.core.k8s:
+            wait: true
+            definition:
+              apiVersion: velero.io/v1
+              kind: Restore
+              metadata:
+                name: initial-cluster-restore
+                namespace: backup-system
               spec:
-                chart: ./helm-flux
-                sourceRef:
-                  kind: GitRepository
-                  name: k8s-baseline
-                reconcileStrategy: Revision
-            values: "{{ helm_values }}"
+                backupName: "{{ restore_from_backup }}"
+
+    - name: Bootstrap infrastructure
+      when: restore_from_backup is undefined
+      block:
+        - name: Ensure Cert-Manager is installed
+          kubernetes.core.helm:
+            wait: true
+            name: cert-manager
+            release_namespace: cert-system
+            chart_repo_url: https://charts.jetstack.io
+            chart_ref: cert-manager
+            chart_version: "^1"
+            values_files:
+              - /tmp/bootstrap-values/cert-manager.yaml
+
+        - name: Ensure FluxCD is installed
+          kubernetes.core.helm:
+            wait: true
+            name: fluxcd
+            release_namespace: flux-system
+            chart_repo_url: https://fluxcd-community.github.io/helm-charts
+            chart_ref: flux2
+            chart_version: "^1"
+            values_files:
+              - /tmp/bootstrap-values/fluxcd.yaml
+
+        - name: Ensure Longhorn is installed
+          kubernetes.core.helm:
+            wait: true
+            name: longhorn
+            release_namespace: longhorn-system
+            chart_repo_url: https://charts.longhorn.io
+            chart_ref: longhorn
+            chart_version: "^1"
+            values_files:
+              - /tmp/bootstrap-values/longhorn.yaml
+
+        - name: Ensure Kube-Prometheus-Stack is installed
+          kubernetes.core.helm:
+            wait: true
+            name: kube-prometheus-stack
+            release_namespace: o11y-system
+            chart_repo_url: https://prometheus-community.github.io/helm-charts
+            chart_ref: kube-prometheus-stack
+            chart_version: "^40"
+
+        - name: Ensure temp manifest download dir exists
+          ansible.builtin.file:
+            path: /tmp/bootstrap-manifests/
+            state: directory
+            mode: "0755"
+
+        - name: Download VolumeSnapshot CRDs
+          ansible.builtin.get_url:
+            url: "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-6.0/client/config/crd/{{ item }}"
+            dest: /tmp/bootstrap-manifests/
+            mode: "0664"
+          with_items:
+            - snapshot.storage.k8s.io_volumesnapshotclasses.yaml
+            - snapshot.storage.k8s.io_volumesnapshotcontents.yaml
+            - snapshot.storage.k8s.io_volumesnapshots.yaml
+
+        - name: Ensure VolumeSnapshot CRDs are installed
+          kubernetes.core.k8s:
+            wait: true
+            src: "/tmp/bootstrap-manifests/{{ item }}"
+          with_items:
+            - snapshot.storage.k8s.io_volumesnapshotclasses.yaml
+            - snapshot.storage.k8s.io_volumesnapshotcontents.yaml
+            - snapshot.storage.k8s.io_volumesnapshots.yaml
+
+        - name: Download VolumeSnapshot controller manifests
+          ansible.builtin.get_url:
+            url: "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-6.0/deploy/kubernetes/snapshot-controller/{{ item }}"
+            dest: /tmp/bootstrap-manifests/
+            mode: "0664"
+          with_items:
+            - rbac-snapshot-controller.yaml
+            - setup-snapshot-controller.yaml
+
+        - name: Ensure VolumeSnapshot controller is installed
+          kubernetes.core.k8s:
+            wait: true
+            src: "/tmp/bootstrap-manifests/{{ item }}"
+          with_items:
+            - rbac-snapshot-controller.yaml
+            - setup-snapshot-controller.yaml
+
+        - name: Download System Upgrade controller manifests
+          ansible.builtin.get_url:
+            url: https://github.com/rancher/system-upgrade-controller/releases/latest/download/system-upgrade-controller.yaml
+            dest: /tmp/bootstrap-manifests/
+            mode: "0664"
+
+        - name: Ensure System Upgrade controller is installed
+          kubernetes.core.k8s:
+            wait: true
+            src: /tmp/bootstrap-manifests/system-upgrade-controller.yaml
+
+        - name: Ensure GitRepository for infrastructure chart exists
+          kubernetes.core.k8s:
+            wait: true
+            definition:
+              apiVersion: source.toolkit.fluxcd.io/v1beta2
+              kind: GitRepository
+              metadata:
+                name: k8s-baseline
+                namespace: flux-system
+              spec:
+                interval: 1h
+                url: "{{ gitops_repo }}"
+                ref:
+                  branch: "{{ gitops_branch }}"
+
+        - name: Ensure HelmRelease for infrastructure chart exists
+          kubernetes.core.k8s:
+            wait: true
+            definition:
+              apiVersion: helm.toolkit.fluxcd.io/v2beta1
+              kind: HelmRelease
+              metadata:
+                name: k8s-baseline
+                namespace: flux-system
+              spec:
+                interval: 1h
+                chart:
+                  spec:
+                    chart: ./infrastructure
+                    sourceRef:
+                      kind: GitRepository
+                      name: k8s-baseline
+                    reconcileStrategy: Revision
+                values: "{{ helm_values }}"

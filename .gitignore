@@ -1,4 +1,7 @@
 kubeconfig.yaml
+kubeconfig
 /inventory.yaml
 /values.yaml
 /snippets.md
+/rendered/
+/values.yaml
