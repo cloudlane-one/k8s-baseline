@@ -27,6 +27,6 @@ Usage:
 */}}
 {{- define "admin_auth_annotations" -}}
 nginx.ingress.kubernetes.io/auth-response-headers: Authorization
-nginx.ingress.kubernetes.io/auth-signin: {{ printf "https://%s/oauth2/start?rd=$escaped_request_uri" (include "get_hostname" (dict "service" "oauth2_proxy" "context" $)) }}
+nginx.ingress.kubernetes.io/auth-signin: {{ printf "https://%s/oauth2/start?rd=$scheme%3A%2F%2F$host$escaped_request_uri" (include "get_hostname" (dict "service" "oauth2_proxy" "context" $)) }}
 nginx.ingress.kubernetes.io/auth-url: {{ printf "https://%s/oauth2/auth" (include "get_hostname" (dict "service" "oauth2_proxy" "context" $)) }}
 {{- end -}}
