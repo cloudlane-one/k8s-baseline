@@ -86,13 +86,22 @@
       ansible.builtin.pip:
         requirements: /tmp/requirements.txt
 
+    - name: Check if Helm CLI is installed
+      ansible.builtin.shell: "which helm"
+      register: which_helm
+      changed_when: false
+      failed_when: false
+      ignore_errors: true
+
     - name: Download Helm install script
+      when: "which_helm.rc != 0"
       ansible.builtin.get_url:
         url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
         dest: /tmp/helm-install.sh
         mode: "0700"
 
-    - name: Ensure Helm is installed
+    - name: Run Helm install script
+      when: "which_helm.rc != 0"
       ansible.builtin.command: /tmp/helm-install.sh
 
     - name: Ensure helm diff plugin is installed
