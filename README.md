@@ -70,3 +70,7 @@ Please refer to [these docs](https://github.com/PyratLabs/ansible-role-k3s/blob/
 ### UPGRADE FAILED: another operation (install/upgrade/rollback) is in progres
 
 Likely a previous helm operation was interrupted, leaving it in an intermediate state. See [this StackOverflow response](https://stackoverflow.com/a/71663688) for possible solutions.
+
+### Re-running the playbook after errors
+
+If the error occured within the play "Install k3s on all cluster nodes and bootstrap infrastructure", then re-run the entire playbook, otherwise it suffices to run the infrastructure part via appending `--tags infra` to the command.
