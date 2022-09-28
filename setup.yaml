@@ -118,11 +118,12 @@
               "meta.helm.sh/release-name": "k8s-baseline"
               "meta.helm.sh/release-namespace": "flux-system"
       with_items:
+        - backup-system
         - cert-system
         - flux-system
+        - ingress-system
         - longhorn-system
         - o11y-system
-        - backup-system
 
     - name: Ensure Cilium is installed
       kubernetes.core.helm:
@@ -247,6 +248,17 @@
             chart_repo_url: https://prometheus-community.github.io/helm-charts
             chart_ref: kube-prometheus-stack
             chart_version: "^40"
+
+        - name: Ensure Ingress-NGINX is installed
+          kubernetes.core.helm:
+            wait: true
+            name: ingress-nginx
+            release_namespace: ingress-system
+            chart_repo_url: https://kubernetes.github.io/ingress-nginx
+            chart_ref: ingress-nginx
+            chart_version: "^4"
+            values_files:
+              - /tmp/bootstrap-values/ingress-nginx.yaml
 
         - name: Ensure temp manifest download dir exists
           ansible.builtin.file:
