@@ -1,6 +1,6 @@
 # k8s-baseline
 
-production-ready, provider-independent &amp; easily manageable k8s cluster setup
+production-ready, provider-independent & easily manageable k8s cluster setup
 
 ## Prior knowledge
 
