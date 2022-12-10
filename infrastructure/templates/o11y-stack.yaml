@@ -84,6 +84,8 @@ spec:
           - hosts:
               - {{ include "get_hostname" (dict "service" "grafana" "context" $) }}
             secretName: grafana-cert
+      persistence:
+        enabled: true
     alertmanager:
       alertmanagerSpec:
         storage:
