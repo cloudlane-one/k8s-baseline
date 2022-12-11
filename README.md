@@ -75,7 +75,7 @@ First copy the configuration template file `inventory.template.yaml` to `invento
 To setup all you provided hosts as kubernetes nodes and join them into a single cluster, run:
 
 ```bash
-ansible-playbook ansible/setup.yaml -i inventory.yaml
+ansible-playbook setup.yaml -i inventory.yaml
 ```
 
 > If you want to restore from a cluster backup, simply append `-e restore_from_backup=<BACKUP-NAME>` to the command. In that case you only need to supply `s3_backup` in `helm_values` and all else will be restored from the backup. Note that the `BACKUP-NAME` must correspond to an existing backup in the location supplied with `s3_backup`.
