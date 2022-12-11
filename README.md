@@ -70,7 +70,7 @@ First copy the configuration template file `inventory.template.yaml` to `invento
 
 ### Setup the cluster
 
-Please first make sure that all you nodes is trusted in `known_hosts`, otherwise you will have to type `yes` and hit Enter for each of your hosts at the beginning of the playbook run.
+> Please either manually make sure that all you nodes are listed as trusted in `known_hosts` or set `auto_trust_remotes` to `true` in `inventory.yaml`, otherwise you will have to type `yes` and hit Enter for each of your hosts at the beginning of the playbook run.
 
 To setup all you provided hosts as kubernetes nodes and join them into a single cluster, run:
 
