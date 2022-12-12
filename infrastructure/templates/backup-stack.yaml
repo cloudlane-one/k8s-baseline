@@ -3,6 +3,43 @@ kind: Namespace
 metadata:
   name: backup-system
 ---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: GitRepository
+metadata:
+  name: external-snapshotter
+  namespace: flux-system
+spec:
+  interval: 5m
+  url: https://github.com/kubernetes-csi/external-snapshotter
+  ref:
+    branch: release-6.1
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
+kind: Kustomization
+metadata:
+  name: volume-snapshot-crds
+  namespace: backup-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: external-snapshotter
+  path: "./client/config/crd"
+  prune: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
+kind: Kustomization
+metadata:
+  name: volume-snapshot-controller
+  namespace: backup-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: external-snapshotter
+  path: "./deploy/kubernetes/snapshot-controller"
+  prune: true
+---
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshotClass
 metadata:
@@ -55,13 +92,13 @@ spec:
       existingSecret: s3-backup-credentials
     initContainers:
       - name: velero-plugin-for-csi
-        image: velero/velero-plugin-for-csi:v0.3.0
+        image: velero/velero-plugin-for-csi:latest
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - mountPath: /target
             name: plugins
       - name: velero-plugin-for-aws
-        image: velero/velero-plugin-for-aws:v1.5.0
+        image: velero/velero-plugin-for-aws:latest
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - mountPath: /target

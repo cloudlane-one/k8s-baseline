@@ -1,0 +1,23 @@
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: GitRepository
+metadata:
+  name: system-upgrade-controller
+  namespace: flux-system
+spec:
+  interval: 5m
+  url: https://github.com/rancher/system-upgrade-controller/
+  ref:
+    branch: master
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
+kind: Kustomization
+metadata:
+  name: system-upgrade-controller
+  namespace: kube-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: system-upgrade-controller
+  path: "./manifests"
+  prune: true

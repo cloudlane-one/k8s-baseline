@@ -318,7 +318,7 @@
 
         - name: Download VolumeSnapshot CRDs
           ansible.builtin.get_url:
-            url: "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-6.0/client/config/crd/{{ item }}"
+            url: "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-6.1/client/config/crd/{{ item }}"
             dest: /tmp/bootstrap-manifests/
             mode: "0664"
           with_items:
@@ -329,6 +329,7 @@
         - name: Ensure VolumeSnapshot CRDs are installed
           kubernetes.core.k8s:
             wait: true
+            namespace: backup-system
             src: "/tmp/bootstrap-manifests/{{ item }}"
           with_items:
             - snapshot.storage.k8s.io_volumesnapshotclasses.yaml
@@ -337,7 +338,7 @@
 
         - name: Download VolumeSnapshot controller manifests
           ansible.builtin.get_url:
-            url: "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-6.0/deploy/kubernetes/snapshot-controller/{{ item }}"
+            url: "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-6.1/deploy/kubernetes/snapshot-controller/{{ item }}"
             dest: /tmp/bootstrap-manifests/
             mode: "0664"
           with_items:
@@ -347,6 +348,7 @@
         - name: Ensure VolumeSnapshot controller is installed
           kubernetes.core.k8s:
             wait: true
+            namespace: backup-system
             src: "/tmp/bootstrap-manifests/{{ item }}"
           with_items:
             - rbac-snapshot-controller.yaml
@@ -361,6 +363,7 @@
         - name: Ensure System Upgrade controller is installed
           kubernetes.core.k8s:
             wait: true
+            namespace: kube-system
             src: /tmp/bootstrap-manifests/system-upgrade-controller.yaml
 
         - name: Ensure GitRepository for infrastructure chart exists
