@@ -136,16 +136,15 @@ spec:
       serviceName: loki
       service:
         port: 80
-      loki:
-        storage:
-          # https://grafana.com/docs/loki/latest/configuration/#s3_storage_config
-          bucketNames: {{ .Values.s3.buckets.loki | toYaml | nindent 12 }}
-          s3:
-            s3: {{ printf "https://%s" .Values.s3.endpoint }}
-            endpoint: {{ .Values.s3.endpoint }}
-            region: {{ .Values.s3.region }}
-            accessKeyId: {{ .Values.s3.access_key.id | quote }}
-            secretAccessKey: {{ .Values.s3.access_key.secret | quote }}
+      storage:
+        # https://grafana.com/docs/loki/latest/configuration/#s3_storage_config
+        bucketNames: {{ .Values.s3.buckets.loki | toYaml | nindent 12 }}
+        s3:
+          s3: {{ printf "https://%s" .Values.s3.endpoint }}
+          endpoint: {{ .Values.s3.endpoint }}
+          region: {{ .Values.s3.region }}
+          accessKeyId: {{ .Values.s3.access_key.id | quote }}
+          secretAccessKey: {{ .Values.s3.access_key.secret | quote }}
 ---
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: HelmRepository
