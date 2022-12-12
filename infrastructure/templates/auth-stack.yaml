@@ -111,6 +111,7 @@ spec:
   dependsOn:
     - name: dex
   interval: 1h
+  timeout: '20m0s' # Setting up public domains for OIDC takes time.
   chart:
     spec:
       chart: oauth2-proxy
