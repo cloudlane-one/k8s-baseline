@@ -78,7 +78,7 @@ To setup all you provided hosts as kubernetes nodes and join them into a single 
 ansible-playbook setup.yaml -i inventory.yaml
 ```
 
-> If you want to restore from a cluster backup, simply append `-e restore_from_backup=<BACKUP-NAME>` to the command. In that case you only need to supply `s3_backup` in `helm_values` and all else will be restored from the backup. Note that the `BACKUP-NAME` must correspond to an existing backup in the location supplied with `s3_backup`.
+> If you want to restore from a cluster backup, simply append `-e restore_from_backup=<BACKUP-NAME>` to the command. In that case you only need to supply `s3` in `helm_values` and all else will be restored from the backup. Note that the `BACKUP-NAME` must correspond to an existing backup in the location supplied with `s3s`.
 
 If you recently rebuilt the OS on any of the hosts and thereby lost its public key, make sure to also update (or at least delete) its `known_hosts` entry, otherwise Ansible will throw an error. There exists a helper playbook `utils/clear_known_hosts.yaml`, which you can run to delete the `known_hosts` entries for all hosts in the inventory at once.
 

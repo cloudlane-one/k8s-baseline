@@ -57,7 +57,7 @@ metadata:
   namespace: backup-system
 type: Opaque
 data:
-  cloud: {{ printf "[default]\naws_access_key_id=%s\naws_secret_access_key=%s" .Values.s3_backup.access_key.id .Values.s3_backup.access_key.secret | b64enc }}
+  cloud: {{ printf "[default]\naws_access_key_id=%s\naws_secret_access_key=%s" .Values.s3.access_key.id .Values.s3.access_key.secret | b64enc }}
 ---
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: HelmRepository

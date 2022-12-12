@@ -11,9 +11,9 @@ metadata:
 type: Opaque
 data:
   # See https://longhorn.io/docs/1.2.4/snapshots-and-backups/backup-and-restore/set-backup-target/#set-up-aws-s3-backupstore
-  AWS_ACCESS_KEY_ID: {{ .Values.s3_backup.access_key.id | b64enc | quote }}
-  AWS_SECRET_ACCESS_KEY: {{ .Values.s3_backup.access_key.secret | b64enc | quote }}
-  AWS_ENDPOINTS: {{ .Values.s3_backup.endpoint | b64enc | quote }}
+  AWS_ACCESS_KEY_ID: {{ .Values.s3.access_key.id | b64enc | quote }}
+  AWS_SECRET_ACCESS_KEY: {{ .Values.s3.access_key.secret | b64enc | quote }}
+  AWS_ENDPOINTS: {{ .Values.s3.endpoint | b64enc | quote }}
 ---
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: HelmRepository
@@ -43,7 +43,7 @@ spec:
     {{ .Files.Get "bootstrap-values/longhorn.yaml" | nindent 4 }}
     defaultSettings:
       # See https://longhorn.io/docs/1.2.4/snapshots-and-backups/backup-and-restore/set-backup-target/#set-up-aws-s3-backupstore
-      backupTarget: {{ printf "s3://%s@%s/" .Values.s3_backup.bucket .Values.s3_backup.region }}
+      backupTarget: {{ printf "s3://%s@%s/" .Values.s3.buckets.backup .Values.s3.region }}
       backupTargetCredentialSecret: s3-secret
     ingress:
       enabled: true

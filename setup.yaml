@@ -198,7 +198,7 @@
                 namespace: backup-system
               type: Opaque
               data:
-                cloud: '{{ ("[default]\naws_access_key_id=" helm_values.s3_backup.access_key.id + "\naws_secret_access_key=" + helm_values.s3_backup.access_key.secret) | b64encode  }}'
+                cloud: '{{ ("[default]\naws_access_key_id=" helm_values.s3.access_key.id + "\naws_secret_access_key=" + helm_values.s3.access_key.secret) | b64encode  }}'
 
         - name: Ensure Velero is installed
           kubernetes.core.helm:
@@ -230,15 +230,15 @@
                 features: EnableCSI
                 backupStorageLocation:
                   name: default
-                  bucket: "{{ helm_values.s3_backup.bucket }}"
+                  bucket: "{{ helm_values.s3.buckets.backup }}"
                   prefix: velero
                   config:
-                    region: "{{ helm_values.s3_backup.region }}"
-                    s3Url: "https://{{ helm_values.s3_backup.endpoint }}"
+                    region: "{{ helm_values.s3.region }}"
+                    s3Url: "https://{{ helm_values.s3.endpoint }}"
                 volumeSnapshotLocation:
                   name: default
                   config:
-                    region: "{{ helm_values.s3_backup.region }}"
+                    region: "{{ helm_values.s3.region }}"
 
         - name: Apply backup restoration
           kubernetes.core.k8s:
