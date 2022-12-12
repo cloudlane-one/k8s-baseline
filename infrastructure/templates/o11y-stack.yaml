@@ -75,7 +75,7 @@ spec:
           jsonData:
             tlsSkipVerify: true
           type: loki
-          url: http://loki:80/
+          url: http://loki-stack:80/
           version: 1
       ingress:
         enabled: true
@@ -136,12 +136,10 @@ spec:
         namespace: flux-system
   values:
     loki:
-      serviceName: loki
-      service:
-        port: 80
       storage:
         # https://grafana.com/docs/loki/latest/configuration/#s3_storage_config
         bucketNames: {{ .Values.s3.buckets.loki | toYaml | nindent 12 }}
+        type: s3
         s3:
           s3: {{ printf "https://%s" .Values.s3.endpoint }}
           endpoint: {{ .Values.s3.endpoint }}
