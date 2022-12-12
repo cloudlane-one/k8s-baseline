@@ -109,15 +109,15 @@ spec:
       features: EnableCSI
       backupStorageLocation:
         name: default
-        bucket: {{ .Values.s3_backup.bucket }}
+        bucket: {{ .Values.s3.buckets.backup }}
         prefix: velero
         config:
-          region: {{ .Values.s3_backup.region }}
-          s3Url: {{ printf "https://%s" .Values.s3_backup.endpoint }}
+          region: {{ .Values.s3.region }}
+          s3Url: {{ printf "https://%s" .Values.s3.endpoint }}
       volumeSnapshotLocation:
         name: default
         config:
-          region: {{ .Values.s3_backup.region }}
+          region: {{ .Values.s3.region }}
     schedules:
       full-backup:
         disabled: false
