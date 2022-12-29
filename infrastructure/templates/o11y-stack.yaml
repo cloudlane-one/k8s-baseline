@@ -75,7 +75,7 @@ spec:
           jsonData:
             tlsSkipVerify: true
           type: loki
-          url: http://loki-stack:80/
+          url: http://loki-stack.o11y-system:3100
           version: 1
       ingress:
         enabled: true
