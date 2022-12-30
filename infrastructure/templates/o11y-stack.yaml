@@ -161,7 +161,7 @@ spec:
           aws:
             # https://grafana.com/docs/loki/latest/configuration/#s3_storage_config
             s3: {{ printf "https://%s" .Values.s3.endpoint }}
-            bucketnames: {{ .Values.s3.buckets.loki.chunks }}
+            bucketnames: {{ .Values.s3.buckets.loki }}
             endpoint: {{ .Values.s3.endpoint }}
             region: {{ .Values.s3.region }}
             access_key_id: {{ .Values.s3.access_key.id | quote }}
