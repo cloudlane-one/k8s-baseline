@@ -136,28 +136,29 @@ spec:
         namespace: flux-system
   values:
     loki:
-      storage:
-        # https://grafana.com/docs/loki/latest/configuration/#s3_storage_config
-        bucketNames: {{ .Values.s3.buckets.loki | toYaml | nindent 12 }}
-        type: s3
-        s3:
-          s3: {{ printf "https://%s" .Values.s3.endpoint }}
-          endpoint: {{ .Values.s3.endpoint }}
-          region: {{ .Values.s3.region }}
-          accessKeyId: {{ .Values.s3.access_key.id | quote }}
-          secretAccessKey: {{ .Values.s3.access_key.secret | quote }}
-      rulerConfig:
-        ruler:
-          storage:
-            type: local
-            local:
-              directory: /tmp/rules
-          rule_path: /tmp/scratch
-          alertmanager_url: http://localhost
-          ring:
-            kvstore:
-              store: inmemory
-          enable_api: true
+      loki:
+        storage:
+          # https://grafana.com/docs/loki/latest/configuration/#s3_storage_config
+          bucketNames: {{ .Values.s3.buckets.loki | toYaml | nindent 12 }}
+          type: s3
+          s3:
+            s3: {{ printf "https://%s" .Values.s3.endpoint }}
+            endpoint: {{ .Values.s3.endpoint }}
+            region: {{ .Values.s3.region }}
+            accessKeyId: {{ .Values.s3.access_key.id | quote }}
+            secretAccessKey: {{ .Values.s3.access_key.secret | quote }}
+        rulerConfig:
+          ruler:
+            storage:
+              type: local
+              local:
+                directory: /tmp/rules
+            rule_path: /tmp/scratch
+            alertmanager_url: http://localhost
+            ring:
+              kvstore:
+                store: inmemory
+            enable_api: true
 ---
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: HelmRepository
