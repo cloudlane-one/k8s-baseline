@@ -140,7 +140,7 @@ spec:
         schema_config:
           configs:
           - from: "2022-12-30"
-            store: aws
+            store: boltdb-shipper
             object_store: s3
             schema: v11
             index:
