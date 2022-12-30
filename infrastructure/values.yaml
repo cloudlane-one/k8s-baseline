@@ -19,10 +19,7 @@ s3:
     secret: "" # Your S3 access key secret
   buckets:
     backup: "" # Name of your S3 backup bucket
-    loki: # Names of loki buckets
-      chunks: ""
-      ruler: ""
-      admin: ""
+    loki: "" # Name of loki storage bucket
 
 external_dns: # These settings are piped directly into the external-dns helm chart config
   # Please supply the type of your DNS provider and according config.

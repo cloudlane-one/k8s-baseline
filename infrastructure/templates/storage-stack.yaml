@@ -13,7 +13,8 @@ data:
   # See https://longhorn.io/docs/1.2.4/snapshots-and-backups/backup-and-restore/set-backup-target/#set-up-aws-s3-backupstore
   AWS_ACCESS_KEY_ID: {{ .Values.s3.access_key.id | b64enc | quote }}
   AWS_SECRET_ACCESS_KEY: {{ .Values.s3.access_key.secret | b64enc | quote }}
-  AWS_ENDPOINTS: {{ .Values.s3.endpoint | b64enc | quote }}
+  AWS_ENDPOINTS: {{ printf "https://%s" .Values.s3.endpoint | b64enc | quote }}
+  VIRTUAL_HOSTED_STYLE: dHJ1ZQ== # true
 ---
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: HelmRepository
