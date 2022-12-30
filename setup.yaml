@@ -366,37 +366,88 @@
             namespace: kube-system
             src: /tmp/bootstrap-manifests/system-upgrade-controller.yaml
 
-        - name: Ensure GitRepository for infrastructure chart exists
-          kubernetes.core.k8s:
-            wait: true
-            definition:
-              apiVersion: source.toolkit.fluxcd.io/v1beta2
-              kind: GitRepository
-              metadata:
-                name: k8s-baseline
-                namespace: flux-system
-              spec:
-                interval: 1h
-                url: "{{ gitops_repo }}"
-                ref:
-                  branch: "{{ gitops_branch }}"
+    - name: Check if Longhorn volume encryption secret exists
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Secret
+        name: longhorn-crypto
+        namespace: longhorn-system
+      register: longhorn_crypto_secret
 
-        - name: Ensure HelmRelease for infrastructure chart exists
-          kubernetes.core.k8s:
-            wait: true
-            definition:
-              apiVersion: helm.toolkit.fluxcd.io/v2beta1
-              kind: HelmRelease
-              metadata:
-                name: k8s-baseline
-                namespace: flux-system
+    - name: Create Longhorn volume encryption secret
+      when: "(longhorn_crypto_secret.resources | length) == 0"
+      kubernetes.core.k8s:
+        wait: true
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: longhorn-crypto
+            namespace: longhorn-system
+          stringData:
+            CRYPTO_KEY_VALUE: "{{ lookup('ansible.builtin.password', '/tmp/passwordfile chars=ascii_letters') }}"
+            CRYPTO_KEY_PROVIDER: "secret"
+            CRYPTO_KEY_CIPHER: "aes-xts-plain64"
+            CRYPTO_KEY_HASH: "sha256"
+            CRYPTO_KEY_SIZE: "256"
+            CRYPTO_PBKDF: "argon2i"
+
+    - name: Ensure Longhorn crypto storage class exists
+      kubernetes.core.k8s:
+        wait: true
+        definition:
+          kind: StorageClass
+          apiVersion: storage.k8s.io/v1
+          metadata:
+            name: longhorn-crypto
+            annotations:
+              "storageclass.kubernetes.io/is-default-class": "true"
+          provisioner: driver.longhorn.io
+          allowVolumeExpansion: true
+          parameters:
+            numberOfReplicas: "2"
+            staleReplicaTimeout: "2880" # 48 hours in minutes
+            fromBackup: ""
+            encrypted: "true"
+            # global secret that contains the encryption key that will be used for all volumes
+            csi.storage.k8s.io/provisioner-secret-name: "longhorn-crypto"
+            csi.storage.k8s.io/provisioner-secret-namespace: "longhorn-system"
+            csi.storage.k8s.io/node-publish-secret-name: "longhorn-crypto"
+            csi.storage.k8s.io/node-publish-secret-namespace: "longhorn-system"
+            csi.storage.k8s.io/node-stage-secret-name: "longhorn-crypto"
+            csi.storage.k8s.io/node-stage-secret-namespace: "longhorn-system"
+
+    - name: Ensure GitRepository for infrastructure chart exists
+      kubernetes.core.k8s:
+        wait: true
+        definition:
+          apiVersion: source.toolkit.fluxcd.io/v1beta2
+          kind: GitRepository
+          metadata:
+            name: k8s-baseline
+            namespace: flux-system
+          spec:
+            interval: 1h
+            url: "{{ gitops_repo }}"
+            ref:
+              branch: "{{ gitops_branch }}"
+
+    - name: Ensure HelmRelease for infrastructure chart exists
+      kubernetes.core.k8s:
+        wait: true
+        definition:
+          apiVersion: helm.toolkit.fluxcd.io/v2beta1
+          kind: HelmRelease
+          metadata:
+            name: k8s-baseline
+            namespace: flux-system
+          spec:
+            interval: 1h
+            chart:
               spec:
-                interval: 1h
-                chart:
-                  spec:
-                    chart: ./infrastructure
-                    sourceRef:
-                      kind: GitRepository
-                      name: k8s-baseline
-                    reconcileStrategy: Revision
-                values: "{{ helm_values }}"
+                chart: ./infrastructure
+                sourceRef:
+                  kind: GitRepository
+                  name: k8s-baseline
+                reconcileStrategy: Revision
+            values: "{{ helm_values }}"
