@@ -146,6 +146,18 @@ spec:
           region: {{ .Values.s3.region }}
           accessKeyId: {{ .Values.s3.access_key.id | quote }}
           secretAccessKey: {{ .Values.s3.access_key.secret | quote }}
+      rulerConfig:
+        ruler:
+          storage:
+            type: local
+            local:
+              directory: /tmp/rules
+          rule_path: /tmp/scratch
+          alertmanager_url: http://localhost
+          ring:
+            kvstore:
+              store: inmemory
+          enable_api: true
 ---
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: HelmRepository
